@@ -2,10 +2,20 @@
 
 DIR="$(dirname "$(readlink -f "$0")")"
 
+REWARD="$(curl --silent https://whattomine.com/coins/151.json | jq .block_reward)"
+
+printf $REWARD
 source $DIR/setup.conf
 
 sendtext() {
-curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$chat_id -d text="$1" >/dev/null 2>&1 ;
+
+
+	if [[ "$2" ]]; then
+		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$2 -d text="$1" >/dev/null 2>&1 ;
+		else
+		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$chat_id -d text="$1" >/dev/null 2>&1 ;
+	fi
+
 }
 
 
@@ -25,6 +35,8 @@ help_section="
 
 while [ 1 ]
 do
+
+
 
 
 curr_message=`curl --silent -s "https://api.telegram.org/bot$api_key/getUpdates?timeout=600&offset=$update_id"`
@@ -48,13 +60,14 @@ case "$command" in
 	("") ;;
         ("/test") result="test PASS!" ;;
         ("/help") result="$help_section" ;;
-	("/reward") result=`curl --silent https://whattomine.com/coins/151.json | jq .block_reward`;;
+	("/reward") result="$REWARD";;
 	(*) result="Unknown command!" ;;
 esac
 
 if [[ "$result" ]]; then
 #printf "Result:\n$result"
 sendtext "$result"
+sendtext "proba" "-409969369"
 fi
 
 printf "\n\n"
