@@ -1,0 +1,10 @@
+sendtext() {
+
+
+	if [[ "$2" ]]; then
+		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$2 -d text="$1" >/dev/null 2>&1 ;
+		else
+		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$chat_id -d text="$1" >/dev/null 2>&1 ;
+	fi
+
+}
