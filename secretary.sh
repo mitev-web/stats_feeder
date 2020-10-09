@@ -2,9 +2,13 @@
 
 DIR="$(dirname "$(readlink -f "$0")")"
 
-REWARD="$(curl --silent https://whattomine.com/coins/151.json | jq .block_reward)"
 
-printf $REWARD
+#Default data
+AUTO_SWITCH="OFF"
+DESIRED_REWARD=4
+DESIRED_POOL="0x75adc2df801b6b9d9f5cfc57a9de46da435d204f"
+
+
 source $DIR/setup.conf
 
 sendtext() {
@@ -29,12 +33,16 @@ fi
 help_section="
 /help - Prints this text
 /reward - Check current ETH Block Reward
-/set desiredReward - set desired reward
-/set min - set minimum desired reward
+/auto_switch - Switch automatically the pool when desired reward is met
+/set-desired-reward - set desired reward
+/set-desired-pool - set desired reward
 "
 
 while [ 1 ]
 do
+
+REWARD=`cat $DIR/../global_vars/.current_reward`
+printf $REWARD
 
 
 
@@ -58,8 +66,9 @@ arg=`echo $curr_message_text | awk {'print $2" "$3" "$4'}`
 
 case "$command" in
 	("") ;;
-        ("/test") result="test PASS!" ;;
-        ("/help") result="$help_section" ;;
+	("/test") result="test PASS!" ;;
+	("/help") result="$help_section" ;;
+	("/set-desired-reward") DESIRED_REWARD=$arg ;;
 	("/reward") result="$REWARD";;
 	(*) result="Unknown command!" ;;
 esac
@@ -67,13 +76,18 @@ esac
 if [[ "$result" ]]; then
 #printf "Result:\n$result"
 sendtext "$result"
-sendtext "proba" "-409969369"
+
+sendtext "Desired reward is $DESIRED_REWARD"
+sendtext "Desired pool is $DESIRED_POOL"
+sendtext "Autoswitch is set to $AUTO_SWITCH"
+
+
 fi
 
 printf "\n\n"
 fi
 
 
-sleep 1
+sleep 5
 
 done
