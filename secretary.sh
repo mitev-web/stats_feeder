@@ -2,25 +2,9 @@
 
 DIR="$(dirname "$(readlink -f "$0")")"
 
-
-#Default data
-AUTO_SWITCH="OFF"
-DESIRED_REWARD=4
-DESIRED_POOL="0x75adc2df801b6b9d9f5cfc57a9de46da435d204f"
-
-
 source $DIR/setup.conf
+source $DIR/sendtext.func
 
-sendtext() {
-
-
-	if [[ "$2" ]]; then
-		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$2 -d text="$1" >/dev/null 2>&1 ;
-		else
-		curl -X POST https://api.telegram.org/bot$api_key/sendMessage -d chat_id=$chat_id -d text="$1" >/dev/null 2>&1 ;
-	fi
-
-}
 
 
 if [ -z "$STY" ]; then
@@ -31,20 +15,22 @@ fi
 
 
 help_section="
-/help - Prints this text
+/stats - Get all updated settings
 /reward - Check current ETH Block Reward
-/auto_switch - Switch automatically the pool when desired reward is met
+/auto_switch - ON or OFF - Switch automatically the pool when desired reward is met
 /set-desired-reward - set desired reward
-/set-desired-pool - set desired reward
+/set-desired-pool - set desired pool
+/set-current-pool - set the current pool manually
 "
 
 while [ 1 ]
 do
 
-REWARD=`cat $DIR/../global_vars/.current_reward`
-printf $REWARD
-
-
+CURRENT_REWARD=`cat $DIR/../global_vars/.current_reward`
+AUTO_SWITCH=`cat $DIR/../global_vars/.pool_auto_switch`
+DESIRED_REWARD=`cat $DIR/../global_vars/.desired_reward`
+DESIRED_POOL=`cat $DIR/../global_vars/.desired_pool`
+CURRENT_POOL=`cat $DIR/../global_vars/.current_pool`
 
 
 curr_message=`curl --silent -s "https://api.telegram.org/bot$api_key/getUpdates?timeout=600&offset=$update_id"`
@@ -64,23 +50,44 @@ fi
 command=`echo $curr_message_text | grep -o '\/.*' | awk {'print $1'} | sed "s|@$username||g"`
 arg=`echo $curr_message_text | awk {'print $2" "$3" "$4'}`
 
+result = ""
+
 case "$command" in
 	("") ;;
-	("/test") result="test PASS!" ;;
+	("/reward") sendtext "ETH Block Reward: $CURRENT_REWARD" ;;
+	("/stats") 
+		sendtext "Current reward is $CURRENT_REWARD"
+		sendtext "Desired reward is $DESIRED_REWARD"
+		sendtext "Current pool is $CURRENT_POOL"
+		sendtext "Desired pool is $DESIRED_POOL"
+		sendtext "Autoswitch is set to $AUTO_SWITCH"
+		$result = "done!" 
+		;;
+	 
 	("/help") result="$help_section" ;;
-	("/set-desired-reward") DESIRED_REWARD=$arg ;;
-	("/reward") result="$REWARD";;
-	(*) result="Unknown command!" ;;
+
+	("/set-desired-reward") 
+		echo $arg > $DIR/../global_vars/.desired_reward
+		$result = "Desired reward is $DESIRED_REWARD" 
+	;;
+	("/set-desired-pool") 
+		echo $arg > $DIR/../global_vars/.desired_pool
+		$result = "Desired pool is $DESIRED_POOL"  
+	;;
+	("/set-current-pool") 
+		echo $arg > $DIR/../global_vars/.current_pool
+		$result = "Current pool is $CURRENT_POOL" 
+	;;
+	("/auto_switch") 
+		echo $arg > $DIR/../global_vars/.pool_auto_switch
+		$result = "Autoswitch is set to $AUTO_SWITCH" 
+	;;
+	(*) $result="Unknown command!" ;;
 esac
 
 if [[ "$result" ]]; then
 #printf "Result:\n$result"
 sendtext "$result"
-
-sendtext "Desired reward is $DESIRED_REWARD"
-sendtext "Desired pool is $DESIRED_POOL"
-sendtext "Autoswitch is set to $AUTO_SWITCH"
-
 
 fi
 
